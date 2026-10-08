@@ -24,6 +24,10 @@ struct GanttSegment {
 };
 
 void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
+    if (segments[0].start_time > 0) {
+        printf("Idle: Start Time = 0, End Time = %d\n", segments[0].start_time);
+    }
+
     for (int i = 0; i < num_segments; i++) {
         printf("Process %d: Start Time = %d, End Time = %d\n", segments[i].pid, segments[i].start_time, segments[i].end_time);
     }
@@ -56,26 +60,31 @@ void fcfs(struct Process *processes, int num_processes) {
         }
 
         if (earliest_arrival_index == -1) {
-            printf("DEBUG: no process available at time %d\n", current_time);
             // no process is available to run, increment current time
             current_time++;
             continue;
         } 
         
-        printf("DEBUG: currently running process %d at time %d\n", earliest_arrival_index, current_time);
-        // run the earliest arrival process for one time unit
-        processes[earliest_arrival_index].remaining_time--;
-        if (processes[earliest_arrival_index].remaining_time == 0) {
-            completed_processes++;
-        }
-        current_time++;
+        // update process data
+        current_time += processes[earliest_arrival_index].remaining_time;
+        processes[earliest_arrival_index].completion_time = current_time;
+        processes[earliest_arrival_index].turnaround_time = processes[earliest_arrival_index].completion_time - processes[earliest_arrival_index].arrival_time;
+        processes[earliest_arrival_index].waiting_time = processes[earliest_arrival_index].turnaround_time - processes[earliest_arrival_index].run_time;
+        processes[earliest_arrival_index].remaining_time = 0;
+        completed_processes++;
+
+        // add a segment to the Gantt chart
+        gantt_segments[gantt_segment_count].pid = processes[earliest_arrival_index].pid;
+        gantt_segments[gantt_segment_count].start_time = current_time - processes[earliest_arrival_index].run_time;
+        gantt_segments[gantt_segment_count].end_time = current_time;
+        gantt_segment_count++;
     }
 
     // print the Gantt chart
-    // print_gantt_chart(gantt_segments, gantt_segment_count);
+    print_gantt_chart(gantt_segments, gantt_segment_count);
 
-    // // free the allocated memory for Gantt chart segments
-    // free(gantt_segments);
+    // free the allocated memory for Gantt chart segments
+    free(gantt_segments);
 }
 
 void sjf(struct Process *processes, int num_processes) {
