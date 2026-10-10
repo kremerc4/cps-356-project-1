@@ -107,7 +107,7 @@ void sjf(struct Process *processes, int num_processes) {
         // find the shortest uncompleted process
         int shortest_index = -1;
         for (int i = 0; i < num_processes; i++) {
-            if (processes[i].remaining_time > 0) {
+            if (processes[i].arrival_time <= current_time && processes[i].remaining_time > 0) {
                 if (shortest_index == -1 || processes[i].remaining_time < processes[shortest_index].remaining_time) {
                     shortest_index = i;
                 }
