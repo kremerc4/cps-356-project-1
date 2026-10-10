@@ -40,9 +40,13 @@ void fcfs(struct Process *processes, int num_processes) {
     // create an array to store Gantt chart segments
     struct GanttSegment *gantt_segments = (struct GanttSegment *)malloc(num_processes * sizeof(struct GanttSegment));
     int gantt_segment_count = 0;
+    
+    // keep track of how many processes have completed
     int completed_processes = 0;
 
+    // while there are uncompleted processes, continue scheduling
     while (completed_processes < num_processes) {
+        // find the earliest arriving uncompleted process
         int earliest_arrival_index = -1;
 
         for (int i = 0; i < num_processes; i++) {
@@ -59,8 +63,8 @@ void fcfs(struct Process *processes, int num_processes) {
             }
         }
 
+        // no process is available to run, increment current time
         if (earliest_arrival_index == -1) {
-            // no process is available to run, increment current time
             current_time++;
             continue;
         } 
@@ -88,7 +92,54 @@ void fcfs(struct Process *processes, int num_processes) {
 }
 
 void sjf(struct Process *processes, int num_processes) {
-    // SJF scheduling logic here
+    // create a counter for the current time
+    int current_time = 0;
+
+    // create an array to store Gantt chart segments
+    struct GanttSegment *gantt_segments = (struct GanttSegment *)malloc(num_processes * sizeof(struct GanttSegment));
+    int gantt_segment_count = 0;
+    
+    // keep track of how many processes have completed
+    int completed_processes = 0;
+
+    // while there are uncompleted processes, continue scheduling
+    while (completed_processes < num_processes) {
+        // find the shortest uncompleted process
+        int shortest_index = -1;
+        for (int i = 0; i < num_processes; i++) {
+            if (processes[i].remaining_time > 0) {
+                if (shortest_index == -1 || processes[i].remaining_time < processes[shortest_index].remaining_time) {
+                    shortest_index = i;
+                }
+            }
+        }
+
+        // no process is available to run, increment current time
+        if (shortest_index == -1) {
+            current_time++;
+            continue;
+        } 
+        
+        // update process data
+        current_time += processes[shortest_index].remaining_time;
+        processes[shortest_index].completion_time = current_time;
+        processes[shortest_index].turnaround_time = processes[shortest_index].completion_time - processes[shortest_index].arrival_time;
+        processes[shortest_index].waiting_time = processes[shortest_index].turnaround_time - processes[shortest_index].run_time;
+        processes[shortest_index].remaining_time = 0;
+        completed_processes++;
+
+        // add a segment to the Gantt chart
+        gantt_segments[gantt_segment_count].pid = processes[shortest_index].pid;
+        gantt_segments[gantt_segment_count].start_time = current_time - processes[shortest_index].run_time;
+        gantt_segments[gantt_segment_count].end_time = current_time;
+        gantt_segment_count++;
+    }
+
+    // print the Gantt chart
+    print_gantt_chart(gantt_segments, gantt_segment_count);
+
+    // free the allocated memory for Gantt chart segments
+    free(gantt_segments);
 }
 
 void stcf(struct Process *processes, int num_processes) {
@@ -134,6 +185,7 @@ int main() {
             round_robin(processes, num_processes);
             break;
         default:
+            // exit with invalid scheduling algorithm selection and return error code
             printf("Invalid scheduling algorithm selected.\n");
             return 1;
     }
