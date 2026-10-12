@@ -217,7 +217,71 @@ void stcf(struct Process *processes, int num_processes) {
 }
 
 void round_robin(struct Process *processes, int num_processes) {
-    // Round Robin scheduling logic here
+    // create a counter for the current time
+    int current_time = 0;
+
+    // create an array to store Gantt chart segments
+    struct GanttSegment *gantt_segments = (struct GanttSegment *)malloc(num_processes * sizeof(struct GanttSegment));
+    int gantt_segment_count = 0;
+    // create a variable to track the current capacity of the Gantt chart array
+    int gantt_capacity = num_processes;
+
+    // keep track of how many processes have completed
+    int completed_processes = 0;
+
+    // set the scheduling quantum for Round Robin
+    int scheduling_quantum = 1; // example quantum from class
+
+    // create variable to keep track of the current process index in the Round Robin queue
+    int current_process_index = 0;
+
+    // main loop for Round Robin scheduling
+    while (completed_processes < num_processes) {
+        if (current_process_index >= num_processes) {
+            current_process_index = 0;
+        }
+
+        // if the current process can not be executed, move to the next process
+        if (processes[current_process_index].arrival_time > current_time || processes[current_process_index].remaining_time == 0) {
+            current_process_index++;
+            continue;
+        }
+        
+        // execute the current process for the scheduling quantum
+        int execution_time = (processes[current_process_index].remaining_time > scheduling_quantum) ? scheduling_quantum : processes[current_process_index].remaining_time;
+        processes[current_process_index].remaining_time -= execution_time;
+        current_time += execution_time;
+
+        // double size of the Gantt chart array if approaching the current capacity (adding a new segment would reach capacity)
+        if ((gantt_segment_count + 1) >= gantt_capacity) {
+            gantt_capacity *= 2;
+            gantt_segments = (struct GanttSegment *)realloc(gantt_segments, gantt_capacity * sizeof(struct GanttSegment));
+        }
+
+        // add a Gantt segment for the current process
+        gantt_segments[gantt_segment_count].start_time = current_time - execution_time;
+        gantt_segments[gantt_segment_count].end_time = current_time;
+        gantt_segments[gantt_segment_count].pid = processes[current_process_index].pid;
+        gantt_segment_count++;
+
+        // check if the current process has completed
+        if (processes[current_process_index].remaining_time == 0) {
+            processes[current_process_index].completion_time = current_time;
+            processes[current_process_index].turnaround_time = processes[current_process_index].completion_time - processes[current_process_index].arrival_time;
+            processes[current_process_index].waiting_time = processes[current_process_index].turnaround_time - processes[current_process_index].run_time;
+            completed_processes++;
+        }
+
+        // move to the next process in the Round Robin queue
+        current_process_index++;
+    }
+
+    // print the Gantt chart
+    print_gantt_chart(gantt_segments, gantt_segment_count);
+
+    // free the allocated memory for Gantt chart segments
+    free(gantt_segments);
+
 }
 
 int main() {
