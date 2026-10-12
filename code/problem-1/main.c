@@ -24,7 +24,7 @@ struct GanttSegment {
 };
 
 void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
-    printf("Gantt Chart:\n");
+    printf("\nGantt Chart:\n");
 
     // construct top half of chart
 
@@ -68,6 +68,28 @@ void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
 
     // print a newline to finish the Gantt chart display
     printf("\n");
+}
+
+void print_process_stats(struct Process *processes, int num_processes) {
+    // create variables to store total waiting and turnaround times for average calculation
+    int total_waiting_time = 0;
+    int total_turnaround_time = 0;
+
+    // print individual process summaries
+    printf("\nProcess Summaries:\n");
+    for (int i = 0; i < num_processes; i++) {
+        printf("PID: %d\n", processes[i].pid);
+        printf("\tWaiting Time: %d\n", processes[i].waiting_time);
+        printf("\tTurnaround Time: %d\n", processes[i].turnaround_time);
+        total_waiting_time += processes[i].waiting_time;
+        total_turnaround_time += processes[i].turnaround_time;
+    }
+
+    // print average waiting and turnaround times
+    printf("\nProcess Average Summaries:\n");
+    printf("Average Waiting Time: %.2f\n", (float)total_waiting_time / num_processes);
+    printf("Average Turnaround Time: %.2f\n", (float)total_turnaround_time / num_processes);
+
 }
 
 void fcfs(struct Process *processes, int num_processes) {
@@ -365,6 +387,10 @@ int main() {
             printf("Invalid scheduling algorithm selected.\n");
             return 1;
     }
+
+    print_process_stats(processes, num_processes);
+
+    free(processes);
 
     return 0;
 }
