@@ -24,15 +24,39 @@ struct GanttSegment {
 };
 
 void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
+    printf("Gantt Chart:\n");
+
+    // construct top half of chart
     if (segments[0].start_time > 0) {
-        printf("Idle: Start Time = 0, End Time = %d\n", segments[0].start_time);
+        printf("| Idle ");
     }
 
     for (int i = 0; i < num_segments; i++) {
-        // TODO: update idle condition to account for time between segments
-        // Use for loop that compares last end time to current start time
-        printf("Process %d: Start Time = %d, End Time = %d\n", segments[i].pid, segments[i].start_time, segments[i].end_time);
+        if (i > 0 && segments[i].start_time > segments[i - 1].end_time) {
+            printf("| Idle ");
+        }
+        printf("| P%-3d ", segments[i].pid);
     }
+
+    printf("|\n");
+
+    // construct bottom half of chart
+    for (int i = 0; i < num_segments; i++) {
+        // print idle spacing at start or between processes
+        if (i == 0 && segments[i].start_time > 0) {
+            printf("%-7d", 0);
+        }
+
+        if (i > 0 && segments[i].start_time > segments[i - 1].end_time) {
+            printf("%-7d", segments[i - 1].end_time);
+        }
+
+        printf("%-7d", segments[i].start_time);
+    }
+    
+    printf("%-7d", segments[num_segments - 1].end_time);
+
+    printf("\n");
 }
 
 void fcfs(struct Process *processes, int num_processes) {
