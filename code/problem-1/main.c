@@ -27,35 +27,46 @@ void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
     printf("Gantt Chart:\n");
 
     // construct top half of chart
+
+    // print initial idle segment if the first process doesn't start at time 0
     if (segments[0].start_time > 0) {
         printf("| Idle ");
     }
 
     for (int i = 0; i < num_segments; i++) {
+        // print idle segment if there is a gap between the current and previous process
         if (i > 0 && segments[i].start_time > segments[i - 1].end_time) {
             printf("| Idle ");
         }
-        printf("| P%-3d ", segments[i].pid);
+
+        // print the current process segment
+        printf("| P%-3d ", segments[i].pid); // ensure all Gantt chart segments are printed with consistent spacing
     }
 
+    // print a newline to finish the top half of the Gantt chart
     printf("|\n");
 
     // construct bottom half of chart
+
     for (int i = 0; i < num_segments; i++) {
-        // print idle spacing at start or between processes
+        // print idle spacing at start time
         if (i == 0 && segments[i].start_time > 0) {
             printf("%-7d", 0);
         }
 
+        // print idle spacing between processes if there is a gap
         if (i > 0 && segments[i].start_time > segments[i - 1].end_time) {
             printf("%-7d", segments[i - 1].end_time);
         }
 
+        // print the start time of the current process segment  
         printf("%-7d", segments[i].start_time);
     }
     
+    // print the end time of the last process segment
     printf("%-7d", segments[num_segments - 1].end_time);
 
+    // print a newline to finish the Gantt chart display
     printf("\n");
 }
 
@@ -314,6 +325,12 @@ int main() {
     printf("Enter the number of processes: ");
     scanf("%d", &num_processes);
 
+    // exit for invalid number of processes
+    if (num_processes < 1 || num_processes > 20) {
+        printf("Invalid number of processes.\n");
+        return 1;
+    }
+
     // create an array of processes
     struct Process *processes = (struct Process *)malloc(num_processes * sizeof(struct Process));
 
@@ -329,6 +346,7 @@ int main() {
     printf("Enter 1 for FCFS, 2 for SJF, 3 for STCF, or 4 for Round Robin: ");
     scanf("%d", &scheduling_algorithm);
 
+    // execute the selected scheduling algorithm
     switch (scheduling_algorithm) {
         case 1:
             fcfs(processes, num_processes);
