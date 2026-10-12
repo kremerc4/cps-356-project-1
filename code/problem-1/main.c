@@ -29,6 +29,8 @@ void print_gantt_chart(struct GanttSegment *segments, int num_segments) {
     }
 
     for (int i = 0; i < num_segments; i++) {
+        // TODO: update idle condition to account for time between segments
+        // Use for loop that compares last end time to current start time
         printf("Process %d: Start Time = %d, End Time = %d\n", segments[i].pid, segments[i].start_time, segments[i].end_time);
     }
 }
@@ -143,7 +145,75 @@ void sjf(struct Process *processes, int num_processes) {
 }
 
 void stcf(struct Process *processes, int num_processes) {
-    // STCF scheduling logic here
+    // create a counter for the current time
+    int current_time = 0;
+
+    // create an array to store Gantt chart segments
+    struct GanttSegment *gantt_segments = (struct GanttSegment *)malloc(num_processes * sizeof(struct GanttSegment));
+    int gantt_segment_count = 0;
+    // create a variable to track the current capacity of the Gantt chart array
+    int gantt_capacity = num_processes;
+    
+    // keep track of how many processes have completed
+    int completed_processes = 0;
+
+    // while there are uncompleted processes, continue scheduling
+    while (completed_processes < num_processes) {
+        // find the shortest uncompleted process
+        int shortest_index = -1;
+        for (int i = 0; i < num_processes; i++) {
+            if (processes[i].arrival_time <= current_time && processes[i].remaining_time > 0) {
+                if (shortest_index == -1 || processes[i].remaining_time < processes[shortest_index].remaining_time) {
+                    shortest_index = i;
+                }
+            }
+        }
+
+        // no process is available to run, increment current time
+        if (shortest_index == -1) {
+            current_time++;
+            continue;
+        }
+
+        if (gantt_segment_count == 0 || processes[shortest_index].pid != gantt_segments[gantt_segment_count - 1].pid) {
+            // process gantt sections
+            if (gantt_segment_count > 0) {
+                gantt_segments[gantt_segment_count - 1].end_time = current_time;
+            }
+            gantt_segments[gantt_segment_count].pid = processes[shortest_index].pid;
+            gantt_segments[gantt_segment_count].start_time = current_time;
+            gantt_segment_count++;
+        }
+
+        // update process on a second-by-second basis
+        processes[shortest_index].remaining_time--;
+        current_time++;
+
+        // double size of the Gantt chart array if approaching the current capacity (adding a new segment would reach capacity)
+        if ((gantt_segment_count + 1) >= gantt_capacity) {
+            gantt_capacity *= 2;
+            gantt_segments = (struct GanttSegment *)realloc(gantt_segments, gantt_capacity * sizeof(struct GanttSegment));
+        }
+
+        // if the process has completed, update its completion time
+        if (processes[shortest_index].remaining_time == 0) {
+            processes[shortest_index].completion_time = current_time;
+            processes[shortest_index].turnaround_time = processes[shortest_index].completion_time - processes[shortest_index].arrival_time;
+            processes[shortest_index].waiting_time = processes[shortest_index].turnaround_time - processes[shortest_index].run_time;
+            completed_processes++;
+        }
+
+        // if all processes have completed, update the final Gantt segment end time
+        if (completed_processes == num_processes) {
+            gantt_segments[gantt_segment_count - 1].end_time = current_time;
+        }
+    }
+
+    // print the Gantt chart
+    print_gantt_chart(gantt_segments, gantt_segment_count);
+
+    // free the allocated memory for Gantt chart segments
+    free(gantt_segments);
 }
 
 void round_robin(struct Process *processes, int num_processes) {
