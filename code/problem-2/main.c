@@ -1,7 +1,8 @@
-/*
+/* 
+ * 
  * Name: William Cady
  * ID: 1017671200
- * Date: 10/11/2023
+ * Date: 10/11/2026
  *
  * Problem 2: Multi-Level Feedback Queue (MLFQ)
  *
@@ -9,13 +10,16 @@
  *   - Simulate the MLFQ algorithm
  *   - Read in Q, N, and N jobs (pid, arrival_time, run_time)
  *   - Simulate one time unit per loop pass, until all jobs are finished
- *   - Print a Gantt chart and its time markers
- *   - Assume 1 <= Q <= 10, 1 <= N <= 20 from the project spec
+ *   - Assume 2 <= Q <= 10, 1 <= N <= 20 from the project spec
+ *   - Implements MLFQ Rules 1-4 from lecture (MLFQ p.16)
  *   - First job in the input is the first to arrive, and all jobs have unique pids
  *   - If a job has run for its entire run_time, it is removed from the queue
  *   - If a job has run for its time slice, it is demoted to the next lower queue (unless it's already at the lowest queue)
  *   - Once a job is moved to the next queue, it is placed at the back of that queue
- *   - Gantt chart highlights the job that ran in each time unit
+ *   - The Gantt chart shows the execution of each job over time
+ *   - This is MLFQ's basic implementation.. Rule 5 states adding an additional defined
+ *     boost period S, but the input has no boost period S
+ *   - Without the boost, a long job can starve if short jobs keep arriving
  * 
  * 
  *
@@ -56,7 +60,7 @@ struct node_t {
 // Lab 5 p.8 (head); one per queue. Level Q-1 is the top queue, level 0 the bottom (MLFQ p.6)
 struct node_t *head[10] = {NULL};
 
-// Note on input, assumed 1<=Q<=10, 1<=N<=20
+// Note on input, assumed 2<=Q<=10, 1<=N<=20
 
 /*
  * insert
@@ -218,7 +222,7 @@ int main(int argc, char *argv[]) {
     // loop for each time unit until all jobs are finished
     while (1) {
 
-        // MLFQ p.7, Rule 3: Arrivals (arrival time = current time)
+        // THIS IS RULE 3: Arrivals (arrival time = current time)
         // jobs that arrive enter at the back of the highest queue (Q-1)
         int j = 0;
         while (j < N) {
@@ -228,9 +232,10 @@ int main(int argc, char *argv[]) {
             j++;
         }
 
-        // MLFQ p.4, Rule 1 and p.13, Rule 4: Settling (what happens to job that ran last time)
+        // THIS IS RULE 1 and RULE 4: Settling (what happens to job that ran last time)
         // job that ran last time unit: finished, used its slice, or preempted
         if (current) {
+            // THIS IS RULE 4: Time Slicing
             int slice = 1 << (Q - 1 - level);   // MLFQ p.14.. time slice, doubling for every lower queue 
             int higher = 0; // effective bool for if there is a job waiting in a higher queue
 
@@ -244,6 +249,7 @@ int main(int argc, char *argv[]) {
                 k++;
             }
 
+            // THIS IS RULE 4: Time Slicing
             if (current->run_time == 0 || current->used >= slice || higher) { // finished, used its slice (MLFQ p.13, Rule 4), or preempted (MLFQ p.4, Rule 1)
                 head[level] = current->next; // take it off the front
 
@@ -268,13 +274,13 @@ int main(int argc, char *argv[]) {
         }
 
         // Pick a job to run, run it for one time unit, and then update chart
-        // MLFQ p.4, Rule 1: highest non-empty queue, front job runs (Rule 2)
+        // MLFQ p.4, THIS IS RULE 1 ---> highest non-empty queue
         current = NULL; // reset
         level = Q - 1; // highest queue
         // this loop goes top to bottom queues to find first non-empty and takes first job in it
         while (level >= 0) {
             if (head[level]) { // head[level] is not NULL, so there is a job waiting in this queue
-                current = head[level];
+                current = head[level]; // THIS IS RULE 2: front job runs
                 break;
             }
             level--; // next lower queue
